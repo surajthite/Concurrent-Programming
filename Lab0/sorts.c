@@ -1,8 +1,39 @@
 
+
+/***************************************************************************************************
+MIT License
+
+Copyright (c) 2018
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+****************************************************************************************************/
+
+/*
+File_Name : sorts.c
+Author: Suraj Thite
+Description : This file contains the functions for merge sort and quick sort required for lab0
+Reference : The algorithms have been referenced from https://www.geeksforgeeks.org/quick-sort/ , https://www.geeksforgeeks.org/merge-sort/
+*/
+
+
 #include "sorts.h"
 
 /*
-Name : merges
+Name : merge
 Description : Function to merge two lists passed as arguments
 INput: Array to be sorted , start , mid and end of the list
 Return: void
@@ -92,10 +123,10 @@ void swap(int* x, int* y)
 }
 
 /*
-Name : swap
-Description : Function to swap two numbers passed as arguments
-INput: Pointer to two numbers
-Return: void
+Name : partition
+Description : Function to partition the given set of data passed as arguments
+INput: Array, high and low values
+Return: index to an array
 */
 
 int partition (int arr[], int low, int high)
@@ -116,10 +147,10 @@ int partition (int arr[], int low, int high)
 }
 
 /*
-Name : file_to_array
-Description : Function to read the unsorted data from file to an array
-INput: handler and array where the data is to be stored from the file
-Return: -1 if error in opening a file , 0 if data has been sucessfully copied from file to an array
+Name : quickSort
+Description : Function to do a recursive quick sort
+INput: Array, High and low values
+Return: void
 */
 
 void quickSort(int arr[], int low, int high)
