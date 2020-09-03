@@ -35,7 +35,11 @@ Description : This file contains the Application code for lab0 exercise
 int verbose_flag;
 int main (int argc, char **argv)
 {
-int c;
+int c = 0;
+char *buff = NULL;
+size_t temp =0;
+int count =0;
+FILE *fptr = NULL;
 
 struct handler handler_t = {"Suraj Thite"};
 if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of arguments
@@ -102,15 +106,7 @@ if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of ar
     printf("%s",handler_t.name);  // print and exit if -- name is passed
     exit (0);
   }
-  // printf("inputfile is:%s\n",handler_t.input_file);
-  // printf("outputfile is:%s\n",handler_t.output_file);
-  // printf("The Merge Flag is :%d\n",handler_t.merge_sort);
-  // printf("The Quick Flag is :%d\n",handler_t.quick_sort);
 
-  char *buff = NULL;
-  size_t temp =0;
-  int count =0;
-  FILE *fptr;
   fptr = fopen(handler_t.input_file,"r");
   if(fptr == NULL)
   {
@@ -122,7 +118,7 @@ if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of ar
     count ++; //Detect the num of elements in the list
   }
   handler_t.f_size = count;
-  printf("\nhandler_t.f_size = %d",  handler_t.f_size);
+  //printf("\nhandler_t.f_size = %d",  handler_t.f_size);
   int array_size = ((handler_t.f_size)); //Store the number of elements in varibale in the handler structure
   int list[array_size]; //Array to store the data from input file
   if(file_to_array(handler_t,list)!=0)  //Store data from file to array
