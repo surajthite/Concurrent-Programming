@@ -41,7 +41,7 @@ size_t temp =0;
 int count =0;
 FILE *fptr = NULL;
 
-struct handler handler_t = {"Suraj Thite"};
+struct handler handler_t = {"Suraj Bajrang Thite"};
 if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of arguments
 {
     printf("Incorrect no of Arguments Passed \nUse format ./mysort [--name] [sourcefile.txt] [-o outputfile.txt] [--alg=<merge,quick>] \n");

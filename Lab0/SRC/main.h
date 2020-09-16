@@ -14,7 +14,7 @@
 
 struct handler
 {
-  char name[12];  // Array to store the Authors name [SUraj Thite]
+  char name[19];  // Array to store the Authors name [Suraj Bajrang Thite]
   char *input_file; //Pointer for input file name
   int f_size; // Size of input file
   char *output_file; // Pointer to output file name.
