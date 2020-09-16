@@ -31,14 +31,14 @@ Reference : The algorithms have been referenced from https://www.geeksforgeeks.o
 
 
 #include "sorts.h"
-
+using namespace std;
 /*
 Name : merge
 Description : Function to merge two lists passed as arguments
 INput: Array to be sorted , start , mid and end of the list
 Return: void
 */
-void merge (int arr[], int start, int mid, int end)
+void merge (vector<int>& arr, int start, int mid, int end)
 {
 
     int len_left = mid - start + 1;
@@ -96,7 +96,7 @@ Description : Function to print the sorted array using merge sort algorithm
 INput: Array, start and end of the lsit
 Return: void
 */
-void mergesort(int arr[], int start, int end)
+void mergesort(vector<int>& arr, int start, int end)
 {
     if (start < end)
     {
@@ -129,7 +129,7 @@ INput: Array, high and low values
 Return: index to an array
 */
 
-int partition (int arr[], int low, int high)
+int partition (vector<int>& arr, int low, int high)
 {
     int pivot = arr[high]; //Detemine the pivoot
     int i = (low - 1);
@@ -153,7 +153,7 @@ INput: Array, High and low values
 Return: void
 */
 
-void quickSort(int arr[], int head, int tail)
+void quickSort(vector<int>& arr, int head, int tail)
 {
     if (head < tail)
     {

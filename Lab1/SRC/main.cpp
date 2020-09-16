@@ -22,17 +22,18 @@ SOFTWARE.
 ****************************************************************************************************/
 
 /*
-File_Name : main.c
+File_Name : main.cpp
 Author: Suraj Thite
-Description : This file contains the Application code for lab0 exercise
+Description : This file contains the Application code for lab0 exercisedsfsd
 */
 
 /* Custom Header Files*/
 
-
 #include "main.h"
 #include "sorts.h"
 int verbose_flag;
+using namespace std;
+
 int main (int argc, char **argv)
 {
 int c = 0;
@@ -120,7 +121,8 @@ if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of ar
   handler_t.f_size = count;
   //printf("\nhandler_t.f_size = %d",  handler_t.f_size);
   int array_size = ((handler_t.f_size)); //Store the number of elements in varibale in the handler structure
-  int list[array_size]; //Array to store the data from input file
+  vector<int> list(array_size);
+  //int list[array_size]; //Array to store the data from input file
   if(file_to_array(handler_t,list)!=0)  //Store data from file to array
   {
     printf("\nCannot write to file"); //Print in case of bad FD
@@ -158,7 +160,7 @@ Description : Function to read the unsorted data from file to an array
 INput: handler and array where the data is to be stored from the file
 Return: -1 if error in opening a file , 0 if data has been sucessfully copied from file to an array
 */
-int file_to_array(struct handler handler_t, int buffer[])
+int file_to_array(struct handler handler_t, vector<int>& buffer)
 {
   FILE *file_pointer;
   file_pointer = fopen(handler_t.input_file,"r"); //Open the file in read mode
@@ -182,7 +184,7 @@ INput: handler and array where the data is to be written to the file
 Return: -1 if error in opening a file , 0 if data has been sucessfully written from array to the specified file
 */
 
-int array_to_file(struct handler handler_t, int buffer[])
+int array_to_file(struct handler handler_t, vector<int>& buffer)
 {
   FILE *file_pointer;
   file_pointer = fopen(handler_t.output_file,"w+"); //Open the output file in write mode
@@ -195,6 +197,6 @@ int array_to_file(struct handler handler_t, int buffer[])
   {
     fprintf(file_pointer,"%d\n",buffer[i]); //Write data to the file
   }
-  fclose(file_pointer); //Close the FD
+  fclose(file_pointer); //Clovector<int> listse the FD
   return 0;
 }

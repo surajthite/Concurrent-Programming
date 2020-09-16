@@ -1,7 +1,7 @@
 all: mysort
 
-mysort: main.c  sorts.c
-	gcc -Wall -Werror -I. -o mysort main.c sorts.c
+mysort: main.cpp  sorts.cpp
+	g++ -Wall -Werror -g -I. -o mysort main.cpp sorts.cpp
 
 clean:
 	rm -f mysort *.o

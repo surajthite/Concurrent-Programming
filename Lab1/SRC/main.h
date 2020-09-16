@@ -9,12 +9,12 @@
 #include<string.h>
 #include <getopt.h>
 #include <stdint.h>
-
+#include <vector>
 /* Structure to store the input arguments from the terminal */
 
 struct handler
 {
-  char name[19];  // Array to store the Authors name [Suraj Bajrang Thite]
+  char name[20];  // Array to store the Authors name [Suraj Bajrang Thite]
   char *input_file; //Pointer for input file name
   int f_size; // Size of input file
   char *output_file; // Pointer to output file name.
@@ -30,7 +30,7 @@ INput: handler and array where the data is to be stored from the file
 Return: -1 if error in opening a file , 0 if data has been sucessfully copied from file to an array
 */
 
-int file_to_array(struct handler handler_t, int buffer[]);
+int file_to_array(struct handler handler_t, std::vector<int>& buffer);
 
 /*
 Name : array_to_file
@@ -39,7 +39,7 @@ INput: handler and array where the data is to be written to the file
 Return: -1 if error in opening a file , 0 if data has been sucessfully written from array to the specified file
 */
 
-int array_to_file(struct handler handler_t, int buffer[]);
+int array_to_file(struct handler handler_t,  std::vector<int>& buffer);
 
 
 #endif
