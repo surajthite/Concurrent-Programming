@@ -9,7 +9,14 @@
 #include<string.h>
 #include <getopt.h>
 #include <stdint.h>
+#include <pthread.h>
+
 #include <vector>
+#include <iostream>
+#include <cmath>
+#include <algorithm>
+#include <set>
+#include <iterator>
 /* Structure to store the input arguments from the terminal */
 
 struct handler
@@ -19,7 +26,9 @@ struct handler
   int f_size; // Size of input file
   char *output_file; // Pointer to output file name.
   int merge_sort;
-  int quick_sort;
+  int bucket;
+  int thread_cnt;
+  bool algo; //0  for Merge Sort and 0 for Buck Sort Implementation
 };
 
 
