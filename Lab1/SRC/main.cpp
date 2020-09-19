@@ -31,8 +31,24 @@ Description : This file contains the Application code for lab0 exercisedsfsd
 
 #include "main.h"
 #include "sorts.h"
+
 int verbose_flag;
 using namespace std;
+
+struct bucket_task
+ {
+  int t_no;
+  int t_div;
+  int t_size;
+  int *list;
+};
+int get_bucket_range(vector<int>& arr, int size, int thread);
+void *bucketSort(void *arg);
+
+pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
+pthread_barrier_t bar;
+vector <multiset <int32_t>> Bucket;
+struct timespec start_time, end_time;
 
 int main (int argc, char **argv)
 {
@@ -43,9 +59,9 @@ int count =0;
 FILE *fptr = NULL;
 
 struct handler handler_t = {"Suraj Bajrang Thite"};
-if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of arguments
+if ((argc < 2) || (argc > 7) || (argc < 7 && argc >2)) // Check for number of arguments
 {
-    printf("Incorrect no of Arguments Passed \nUse format ./mysort [--name] [sourcefile.txt] [-o outputfile.txt] [--alg=<merge,quick>] \n");
+    printf("Incorrect no of Arguments Passed \nUse format ./mysort [--name] [sourcefile.txt] [-o outputfile.txt] [--alg=<fjmerge,lkbucket>] \n");
     return -1; //Return if incorrect number of arguments passsed
 }
   while (1)
@@ -55,11 +71,11 @@ if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of ar
           {"name", no_argument, &verbose_flag, 'n'}, //Long option ofr --name
           {"alg",  required_argument, 0, 'a'},  //long option for alg = merge/quick
           {"out",  required_argument,  0, 'o'}, //option for output file
-          {"in",    required_argument, 0, 'i'}, //option for input file
-          {0, 0, 0}
+          {"thread",    required_argument, 0, 't'}, //option for input file
+          {0, 0, 0,0}
         };
       int option_index = 0;
-      c = getopt_long (argc, argv, ":o:",long_options, &option_index);
+      c = getopt_long (argc, argv, ":o:t:",long_options, &option_index);
       if (c == -1)
         break;
 
@@ -75,10 +91,10 @@ if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of ar
           break;
 
         case 'a':
-        if(strcmp(optarg,"merge")==0)
+        if(strcmp(optarg,"fjmerge")==0)
           handler_t.merge_sort = 1; //Set the merge sort flag
-        if(strcmp(optarg,"quick")==0)
-          handler_t.quick_sort = 1; //Set the quick sort flag
+        if(strcmp(optarg,"lkbucket")==0)
+          handler_t.bucket = 1; //Set the quick sort flag
         break;
 
        case 'o':
@@ -88,13 +104,17 @@ if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of ar
         case 'i':
           handler_t.input_file =optarg; //store the input file name in the handler
           break;
+        case 't':
+          //  printf("The number of threads passed is %d",atoi(optarg));
+          handler_t.thread_cnt =  atoi(optarg);
+          printf("The number of threads passed is %d",  handler_t.thread_cnt);
 
         case '?':
-          printf("Error!"); //Error options
+          // printf("Error!"); //Error options
           break;
 
         default:
-             printf("Incorrect no of Arguments Passed \nUse format ./mysort [--name] [sourcefile.txt] [-o outputfile.txt] [--alg=<merge,quick>] \n"); //Print error message
+             printf("Incorrect no of Arguments Passed \nUse format ./mysort [--name] [sourcefile.txt] [-o outputfile.txt] [--alg=<fjmerge, lkbucket>] \n"); //Print error message
 
         }
     }
@@ -107,6 +127,10 @@ if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of ar
     printf("%s",handler_t.name);  // print and exit if -- name is passed
     exit (0);
   }
+
+  if (handler_t.thread_cnt <= 0) {
+		handler_t.thread_cnt = 1;
+	}
 
   fptr = fopen(handler_t.input_file,"r");
   if(fptr == NULL)
@@ -122,6 +146,8 @@ if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of ar
   //printf("\nhandler_t.f_size = %d",  handler_t.f_size);
   int array_size = ((handler_t.f_size)); //Store the number of elements in varibale in the handler structure
   vector<int> list(array_size);
+
+  pthread_t threads[handler_t.thread_cnt];
   //int list[array_size]; //Array to store the data from input file
   if(file_to_array(handler_t,list)!=0)  //Store data from file to array
   {
@@ -139,10 +165,63 @@ if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of ar
         printf("Executing Merge Sort");
         mergesort(list, 0, (array_size - 1));  //Execute merge algorithm if --al=merge is passed as argument
       }
-    else if(handler_t.quick_sort)
+    else if(handler_t.bucket)
     {
-      printf("Executing Quick Sort"); //Execute quick algorithm if --al=quick is passed as argument
-      quickSort(list, 0, (array_size - 1));
+      printf("Executing Bucket Sort"); //Execute quick algorithm if --al=quick is passed as argument
+      //quickSort(list, 0, (array_size - 1));
+      int i = 0, k = 0;
+      struct bucket_task btsk[handler_t.thread_cnt];
+      int divider = get_bucket_range(list, array_size, handler_t.thread_cnt);
+      Bucket.resize(handler_t.thread_cnt);
+      int len = (array_size / handler_t.thread_cnt);
+      int m = 0;
+
+      pthread_barrier_init(&bar, NULL, handler_t.thread_cnt);
+
+      for (i = 0; i < handler_t.thread_cnt; i++)
+      {
+        m = i*len;
+        if (i == (handler_t.thread_cnt - 1))
+        {
+          btsk[i].t_div = divider;
+          btsk[i].t_no = i;
+          btsk[i].t_size = (array_size - m);
+          btsk[i].list = &list[m];
+        }
+        else
+        {
+          btsk[i].t_div = divider;
+          btsk[i].t_no = i;
+          btsk[i].t_size = len;
+          btsk[i].list = &list[m];
+        }
+
+        if ((pthread_create(&threads[i], NULL, bucketSort, (void *)&btsk[i])) != 0)
+        {
+          printf("Error on creating the thread\n");
+          exit(1);
+        }
+        else
+        {
+          printf("Creating thread %d\n", (i+1));
+        }
+      }
+
+      for (i = 0; i < handler_t.thread_cnt; i++)
+      {
+        printf("Joining thread %d\n", (i+1));
+        pthread_join(threads[i], NULL);
+      }
+      int vec_len = (int)Bucket.size();
+      for (i = 0; i < vec_len; i++) {
+      for (std::multiset<int>::iterator j = Bucket[i].begin(); j != Bucket[i].end(); ++j)
+      {
+        list[k] = *j;
+        k++;
+      }
+      }
+      clock_gettime(CLOCK_MONOTONIC,&end_time);
+      pthread_barrier_destroy(&bar);
     }
     printf("\nWriting Data to the file");
     printf("\n************** The Sorted array is ***************** \n");
@@ -151,6 +230,10 @@ if ((argc < 2) || (argc > 5) || (argc < 5 && argc >2)) // Check for number of ar
         printf("%d\n",list[i]); //Print the sorted array !
       }
     array_to_file(handler_t, list); // Store the sorted data to a ouput file passed as argument
+unsigned long long elapsed_ns;
+elapsed_ns = (end_time.tv_sec-start_time.tv_sec)*1000000000 + (end_time.tv_nsec-start_time.tv_nsec);
+double elapsed_s = ((double)elapsed_ns)/1000000000.0;
+printf("Elapsed (s): (ns) %lf : %llu \n",elapsed_s,elapsed_ns);
   exit (0);
 }
 
@@ -199,4 +282,54 @@ int array_to_file(struct handler handler_t, vector<int>& buffer)
   }
   fclose(file_pointer); //Clovector<int> listse the FD
   return 0;
+}
+
+/*
+Name : array_to_file
+Description : Function to write the sorted data to the file*
+INput: handler and array where the data is to be written to the file
+Return: -1 if error in opening a file , 0 if data has been sucessfully written from array to the specified file
+*/
+
+int get_bucket_range(vector<int>& arr, int size, int thread)
+{
+    int max = 0, bucket = 0, divider = 0;
+
+	bucket = thread;
+  int temp[arr.size()];
+	std::copy(arr.begin(), arr.end(), temp);
+    //find max
+    max = *max_element(temp,temp + size);
+    divider = ceil(float(max + 1) / bucket);
+
+    return divider;
+}
+
+/*
+Name : array_to_file
+Description : Function to write the sorted data to the file*
+INput: handler and array where the data is to be written to the file
+Return: -1 if error in opening a file , 0 if data has been sucessfully written from array to the specified file
+*/
+
+void *bucketSort(void *arg)
+{
+  struct bucket_task *b_task = (struct bucket_task *) arg;
+	int i = 0, j = 0;
+//	pthread_barrier_wait(&bar);
+  if(b_task->t_no == 0)
+  {
+      clock_gettime(CLOCK_MONOTONIC,&start_time);
+  }
+  pthread_barrier_wait(&bar);
+	printf("Executing thread %d\n",(b_task->t_no + 1));
+	for (i = 0; i < b_task->t_size; i++)
+  {
+		j=floor( b_task->list[i] / b_task->t_div );
+		pthread_mutex_lock(&lock1);
+		Bucket[j].insert((b_task->list)[i]);
+		pthread_mutex_unlock(&lock1);
+	}
+	pthread_barrier_wait(&bar);
+	return 0;
 }
