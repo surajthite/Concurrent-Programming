@@ -10,7 +10,6 @@
 #include <getopt.h>
 #include <stdint.h>
 #include <pthread.h>
-
 #include <vector>
 #include <iostream>
 #include <cmath>
@@ -32,6 +31,13 @@ struct handler
 };
 
 
+struct bucket_task
+ {
+  int t_id;
+  int t_divider;
+  int t_size;
+  int *list;
+};
 /*
 Name : file_to_array
 Description : Function to read the unsorted data from file to an array

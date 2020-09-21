@@ -35,13 +35,7 @@ Description : This file contains the Application code for lab0 exercisedsfsd
 int verbose_flag;
 using namespace std;
 
-struct bucket_task
- {
-  int t_no;
-  int t_div;
-  int t_size;
-  int *list;
-};
+
 int get_bucket_range(vector<int>& arr, int size, int thread);
 void *bucketSort(void *arg);
 
@@ -183,15 +177,15 @@ if ((argc < 2) || (argc > 7) || (argc < 7 && argc >2)) // Check for number of ar
         m = i*len;
         if (i == (handler_t.thread_cnt - 1))
         {
-          btsk[i].t_div = divider;
-          btsk[i].t_no = i;
+          btsk[i].t_divider = divider;
+          btsk[i].t_id = i;
           btsk[i].t_size = (array_size - m);
           btsk[i].list = &list[m];
         }
         else
         {
-          btsk[i].t_div = divider;
-          btsk[i].t_no = i;
+          btsk[i].t_divider = divider;
+          btsk[i].t_id = i;
           btsk[i].t_size = len;
           btsk[i].list = &list[m];
         }
@@ -315,21 +309,21 @@ Return: -1 if error in opening a file , 0 if data has been sucessfully written f
 void *bucketSort(void *arg)
 {
   struct bucket_task *b_task = (struct bucket_task *) arg;
-	int i = 0, j = 0;
-//	pthread_barrier_wait(&bar);
-  if(b_task->t_no == 0)
+	int64_t i = 0, j = 0;
+	//pthread_barrier_wait(&bar);
+  if(b_task->t_id == 0)
   {
       clock_gettime(CLOCK_MONOTONIC,&start_time);
   }
-  pthread_barrier_wait(&bar);
-	printf("Executing thread %d\n",(b_task->t_no + 1));
+  //pthread_barrier_wait(&bar);
+	printf("Executing thread %d\n",(b_task->t_id + 1));
 	for (i = 0; i < b_task->t_size; i++)
   {
-		j=floor( b_task->list[i] / b_task->t_div );
+		j=floor( b_task->list[i] / b_task->t_divider );
 		pthread_mutex_lock(&lock1);
 		Bucket[j].insert((b_task->list)[i]);
 		pthread_mutex_unlock(&lock1);
 	}
-	pthread_barrier_wait(&bar);
+	//pthread_barrier_wait(&bar);
 	return 0;
 }
