@@ -38,9 +38,10 @@ using namespace std;
 
 int get_bucket_range(vector<int>& arr, int size, int thread);
 void *bucketSort(void *arg);
+void *merge_sort123(void *arg);
 
 pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
-pthread_barrier_t bar;
+pthread_barrier_t barrier;
 vector <multiset <int32_t>> Bucket;
 struct timespec start_time, end_time;
 
@@ -55,7 +56,7 @@ FILE *fptr = NULL;
 struct handler handler_t = {"Suraj Bajrang Thite"};
 if ((argc < 2) || (argc > 7) || (argc < 7 && argc >2)) // Check for number of arguments
 {
-    printf("Incorrect no of Arguments Passed \nUse format ./mysort [--name] [sourcefile.txt] [-o outputfile.txt] [--alg=<fjmerge,lkbucket>] \n");
+    printf("Incorrect no of Arguments Passed \nUse format ./mysort [--name] [sourcefile.txt] [-o outputfile.txt] [-t <no of threads>][--alg=<fjmerge,lkbucket>] \n");
     return -1; //Return if incorrect number of arguments passsed
 }
   while (1)
@@ -148,6 +149,9 @@ if ((argc < 2) || (argc > 7) || (argc < 7 && argc >2)) // Check for number of ar
     printf("\nCannot write to file"); //Print in case of bad FD
     return -1;
   }
+
+  int list_array[list.size()];
+  std::copy(list.begin(), list.end(), list_array);
   printf("\n************** The Input array is *****************\n");
     for(int i=0;i<handler_t.f_size;i++)
     {
@@ -156,41 +160,90 @@ if ((argc < 2) || (argc > 7) || (argc < 7 && argc >2)) // Check for number of ar
 
     if(handler_t.merge_sort)
       {
-        printf("Executing Merge Sort");
-        mergesort(list, 0, (array_size - 1));  //Execute merge algorithm if --al=merge is passed as argument
+        printf("\n Executing Merge Sort !! ");
+        struct task *merge_task;
+        struct task merge_task_list[handler_t.thread_cnt];
+        int len = (array_size / handler_t.thread_cnt);
+        int i = 0, low = 0;
+        pthread_barrier_init(&barrier, NULL, handler_t.thread_cnt);
+        for (i = 0; i < handler_t.thread_cnt; i++, low += len) {
+
+          merge_task = &merge_task_list[i];
+          merge_task->task_no = i;
+          merge_task->list = list_array;
+
+          merge_task->task_low = low;
+          merge_task->task_high = low + len - 1;
+
+          if (i == (handler_t.thread_cnt - 1)) {
+            merge_task->task_high = array_size - 1;
+          }
+        }
+
+        for (i = 0; i < handler_t.thread_cnt; i++) {
+          merge_task = &merge_task_list[i];
+          if ((pthread_create(&threads[i], NULL, merge_sort123, merge_task)) != 0) {
+            printf("Error on creating the thread\n");
+                    exit(1);
+          } else {
+            printf("Creating thread %d\n", (i+1));
+          }
+        }
+
+            // joining all 4 threads
+        for (i = 0; i < handler_t.thread_cnt; i++) {
+          printf("Joining thread %d\n", (i+1));
+          pthread_join(threads[i], NULL);
+        }
+
+        struct task *task_0 = &merge_task_list[0];
+        for (i = 1; i < handler_t.thread_cnt; i++) {
+          struct task *tsk = &merge_task_list[i];
+          merge(tsk->list, task_0->task_low, tsk->task_low - 1, tsk->task_high);
+        }
+
+        clock_gettime(CLOCK_MONOTONIC, &end_time);
+        pthread_barrier_destroy(&barrier);
+        printf("\nWriting Data to the file");
+        printf("\n************** The Sorted array is ***************** \n");
+          for(int i=0;i<handler_t.f_size;i++)
+          {
+            printf("%d\n",list_array[i]); //Print the sorted array !
+          }
+       array_to_file(handler_t, list_array); // Store the sorted data to a ouput file passed as argument
       }
     else if(handler_t.bucket)
     {
       printf("Executing Bucket Sort"); //Execute quick algorithm if --al=quick is passed as argument
       //quickSort(list, 0, (array_size - 1));
       int i = 0, k = 0;
-      struct bucket_task btsk[handler_t.thread_cnt];
+      struct bucket_task b_task[handler_t.thread_cnt];
       int divider = get_bucket_range(list, array_size, handler_t.thread_cnt);
       Bucket.resize(handler_t.thread_cnt);
       int len = (array_size / handler_t.thread_cnt);
       int m = 0;
 
-      pthread_barrier_init(&bar, NULL, handler_t.thread_cnt);
+      pthread_barrier_init(&barrier, NULL, handler_t.thread_cnt);
 
       for (i = 0; i < handler_t.thread_cnt; i++)
       {
         m = i*len;
-        if (i == (handler_t.thread_cnt - 1))
+        if (i != (handler_t.thread_cnt - 1))
         {
-          btsk[i].t_divider = divider;
-          btsk[i].t_id = i;
-          btsk[i].t_size = (array_size - m);
-          btsk[i].list = &list[m];
+          b_task[i].t_divider = divider;
+          b_task[i].t_id = i;
+          b_task[i].t_size = len;
+          b_task[i].list = &list[m];
         }
         else
         {
-          btsk[i].t_divider = divider;
-          btsk[i].t_id = i;
-          btsk[i].t_size = len;
-          btsk[i].list = &list[m];
+          b_task[i].t_divider = divider;
+          b_task[i].t_id = i;
+          b_task[i].t_size = (array_size - m);
+          b_task[i].list = &list[m];
         }
 
-        if ((pthread_create(&threads[i], NULL, bucketSort, (void *)&btsk[i])) != 0)
+        if ((pthread_create(&threads[i], NULL, bucketSort, (void *)&b_task[i])) != 0)
         {
           printf("Error on creating the thread\n");
           exit(1);
@@ -215,20 +268,22 @@ if ((argc < 2) || (argc > 7) || (argc < 7 && argc >2)) // Check for number of ar
       }
       }
       clock_gettime(CLOCK_MONOTONIC,&end_time);
-      pthread_barrier_destroy(&bar);
-    }
-    printf("\nWriting Data to the file");
-    printf("\n************** The Sorted array is ***************** \n");
-      for(int i=0;i<handler_t.f_size;i++)
-      {
-        printf("%d\n",list[i]); //Print the sorted array !
-      }
+      pthread_barrier_destroy(&barrier);
+      printf("\nWriting Data to the file");
+      printf("\n************** The Sorted array is ***************** \n");
+        for(int i=0;i<handler_t.f_size;i++)
+        {
+          printf("%d\n",list[i]); //Print the sorted array !
+        }
     array_to_file(handler_t, list); // Store the sorted data to a ouput file passed as argument
+    }
+
+
 unsigned long long elapsed_ns;
 elapsed_ns = (end_time.tv_sec-start_time.tv_sec)*1000000000 + (end_time.tv_nsec-start_time.tv_nsec);
 double elapsed_s = ((double)elapsed_ns)/1000000000.0;
 printf("Elapsed (s): (ns) %lf : %llu \n",elapsed_s,elapsed_ns);
-  exit (0);
+exit (0);
 }
 
 /*
@@ -278,6 +333,22 @@ int array_to_file(struct handler handler_t, vector<int>& buffer)
   return 0;
 }
 
+int array_to_file(struct handler handler_t, int buffer[])
+{
+  FILE *file_pointer;
+  file_pointer = fopen(handler_t.output_file,"w+"); //Open the output file in write mode
+  if(file_pointer == NULL)
+  {
+    printf("Error in opening the specified output text file"); //Error in case of bad FD
+    return -1;
+  }
+  for (int i=0 ;i<handler_t.f_size;i++)
+  {
+    fprintf(file_pointer,"%d\n",buffer[i]); //Write data to the file
+  }
+  fclose(file_pointer); //Clovector<int> listse the FD
+  return 0;
+}
 /*
 Name : array_to_file
 Description : Function to write the sorted data to the file*
@@ -310,12 +381,12 @@ void *bucketSort(void *arg)
 {
   struct bucket_task *b_task = (struct bucket_task *) arg;
 	int64_t i = 0, j = 0;
-	//pthread_barrier_wait(&bar);
+	//pthread_barrier_wait(&barrier);
   if(b_task->t_id == 0)
   {
       clock_gettime(CLOCK_MONOTONIC,&start_time);
   }
-  //pthread_barrier_wait(&bar);
+  //pthread_barrier_wait(&barrier);
 	printf("Executing thread %d\n",(b_task->t_id + 1));
 	for (i = 0; i < b_task->t_size; i++)
   {
@@ -324,6 +395,35 @@ void *bucketSort(void *arg)
 		Bucket[j].insert((b_task->list)[i]);
 		pthread_mutex_unlock(&lock1);
 	}
-	//pthread_barrier_wait(&bar);
+	//pthread_barrier_wait(&barrier);
 	return 0;
+}
+
+void *merge_sort123(void *arg)
+{
+  int low =0,high =0 , mid=0;
+	struct task *merge_args = (struct task *)arg;
+
+	pthread_barrier_wait(&barrier);
+
+	if(merge_args->task_no == 0){
+		clock_gettime(CLOCK_MONOTONIC,&start_time);
+	}
+
+	pthread_barrier_wait(&barrier);
+
+	printf("Executing thread %d\n", (merge_args->task_no + 1));
+
+  low = merge_args->task_low;
+  high = merge_args->task_high;
+
+    int mid = low + (high - low) / 2;
+
+    if (low < high) {
+        mergesort(merge_args->list, low, mid);
+        mergesort(merge_args->list, mid + 1, high);
+        merge(merge_args->list, low, mid, high);
+    }
+
+    return 0;
 }
