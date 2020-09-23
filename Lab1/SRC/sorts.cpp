@@ -38,7 +38,7 @@ Description : Function to merge two lists passed as arguments
 INput: Array to be sorted , start , mid and end of the list
 Return: void
 */
-void merge (vector<int>& arr, int start, int mid, int end)
+void merge (int arr[], int start, int mid, int end)
 {
 
     int len_left = mid - start + 1;
@@ -96,7 +96,7 @@ Description : Function to print the sorted array using merge sort algorithm
 INput: Array, start and end of the lsit
 Return: void
 */
-void mergesort(vector<int>& arr, int start, int end)
+void mergesort(int arr[], int start, int end)
 {
     if (start < end)
     {
