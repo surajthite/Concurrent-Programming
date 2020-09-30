@@ -430,20 +430,19 @@ void *bucketSort(void *arg)
 {
   struct bucket_task *b_task = (struct bucket_task *) arg;
 	int64_t i = 0, j = 0;
-	//pthread_barrier_wait(&barrier);
   if(b_task->t_id == 0)
   {
       clock_gettime(CLOCK_MONOTONIC,&start_time);
   }
-  //pthread_barrier_wait(&barrier);
+//  pthread_barrier_wait(&barrier);
 	printf("Executing thread %d\n",(b_task->t_id + 1));
 	for (i = 0; i < b_task->t_size; i++)
   {
 		j=floor( b_task->list[i] / b_task->t_divider );
-		pthread_mutex_lock(&bucket_lock);
-		Bucket[j].insert((b_task->list)[i]);
-		pthread_mutex_unlock(&bucket_lock);
+		pthread_mutex_lock(&bucket_lock); //Lock
+		Bucket[j].insert((b_task->list)[i]); //Critical Section
+		pthread_mutex_unlock(&bucket_lock); //Unlock 
 	}
-	//pthread_barrier_wait(&barrier);
+//	pthread_barrier_wait(&barrier);
 	return 0;
 }
