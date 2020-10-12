@@ -31,7 +31,7 @@ Description : This file contains the Application code for lab0 exercisedsfsd
 
 #include "main.h"
 #include "sorts.h"
-
+#include "custom_locks.h"
 int verbose_flag;
 using namespace std;
 
@@ -46,6 +46,32 @@ pthread_barrier_t barrier;// Barrier for Synchronization
 vector <multiset <int32_t>> Bucket; //Global Bucket to store values
 struct timespec start_time, end_time; //Struct to store the timer values
 
+int get_bucket_range(int arr[], int size, int thread);
+void *bucketSort(void *arg);
+int TEST_NUM=0;
+const int FUNC_CNT = 8;
+void (*funcs_lock[FUNC_CNT])()  = {
+    TAS_lock,
+    TTAS_lock,
+    Ticket_lock,
+    Pthread_lock,
+    TAS_unlock,
+    TTAS_unlock,
+    Ticket_unlock,
+    Pthread_unlock
+};
+
+const char* func_names_lock[FUNC_CNT/2] = {
+    "tas",
+    "ttas",
+    "ticket",
+    "pthread"
+};
+
+struct handler handler_t = {"Suraj Bajrang Thite"};
+MCSLock my_mcs_lock;
+atomic<Node*> tail{NULL};
+
 int main (int argc, char **argv)
 {
 int c = 0;
@@ -53,12 +79,16 @@ char *buff = NULL;
 size_t temp =0;
 int count =0;
 FILE *fptr = NULL; //Pointer to access the file
+char bar[256];
 
-struct handler handler_t = {"Suraj Bajrang Thite"};
-if ((argc < 2) || (argc > 7) || (argc < 7 && argc >2)) // Check for number of arguments
+if ((argc < 2) || (argc > 9) || (argc < 9 && argc >2)) // Check for number of arguments
 {
-    printf("Incorrect no of Arguments Passed \nUse format ./mysort [--name] [sourcefile.txt] [-o outputfile.txt] [-t <no of threads>][--alg=<fjmerge,lkbucket>] \n");
+    printf("mysort [--name] [source.txt] [-o out.txt] [-t NUM THREADS] [--alg=<fj,bucket>] [--bar=<sense,pthread>] [--lock=<tas,ttas,ticket,mcs,pthread>] \n");
     return -1; //Return if incorrect number of arguments passsed
+}
+if ((strcmp(argv[1], "--name")) != 0) {
+  handler_t.input_file = argv[1]; //store the input file name passed as extra argument
+   printf("The input filename is %s\n", handler_t.input_file);
 }
   while (1)
     {
@@ -68,10 +98,12 @@ if ((argc < 2) || (argc > 7) || (argc < 7 && argc >2)) // Check for number of ar
           {"alg",  required_argument, 0, 'a'},  //long option for alg = merge/quick
           {"out",  required_argument,  0, 'o'}, //option for output file
           {"thread",    required_argument, 0, 't'}, //option for threads to be implemented
+          {"bar",    required_argument, 0, 'b'},
+          {"lock",    required_argument, 0, 'l'},
           {0, 0, 0,0}
         };
       int option_index = 0;
-      c = getopt_long (argc, argv, ":o:t:",long_options, &option_index);
+      c = getopt_long (argc, argv, "n:o:t:a:b:l:",long_options, 0);
       if (c == -1)
         break;
 
@@ -87,34 +119,51 @@ if ((argc < 2) || (argc > 7) || (argc < 7 && argc >2)) // Check for number of ar
           break;
 
         case 'a':
-        if(strcmp(optarg,"fjmerge")==0)
+        if(strcmp(optarg,"fj")==0)
           handler_t.merge_sort = 1; //Set the merge sort flag
-        if(strcmp(optarg,"lkbucket")==0)
+        if(strcmp(optarg,"bucket")==0)
           handler_t.bucket = 1; //Set the bucket flag
         break;
 
-       case 'o':
-          handler_t.output_file = optarg; //store the output file name in the handler
-          break;
+        case 'b':
+        strcpy(bar, optarg);
+        if (strcmp(bar, "sense") == 0)
+            handler_t.sense_barr = 1;
+        else if (strcmp(bar, "pthread") == 0)
+            handler_t.sense_barr = 0;
+        printf("\nFlag for Sense Barrier used is %d\n",handler_t.sense_barr);
+        break;
 
-        case 'i':
-          handler_t.input_file =optarg; //store the input file name in the handler
-          break;
+        case 'o':
+        handler_t.output_file = optarg; //store the output file name in the handler
+        break;
+
+        case 'l':
+          handler_t.lock = optarg;
+          for (int i = 0; (i < (FUNC_CNT/2)); i++)
+        {
+          if (strcmp(handler_t.lock, func_names_lock[i]) == 0)
+          TEST_NUM = i;
+        }
+          printf("The lock used is %s\n", handler_t.lock);
+          printf("The lock to be executed is %d\n",TEST_NUM);
+        break;
+
         case 't':
           //  printf("The number of threads passed is %d",atoi(optarg));
           handler_t.thread_cnt =  atoi(optarg); //store the thread count in the variable
           printf("The number of threads passed is %d",  handler_t.thread_cnt);
+        break;
 
         case '?':
           break;
 
         default:
-        printf("Incorrect no of Arguments Passed \nUse format ./mysort [--name] [sourcefile.txt] [-o outputfile.txt] [-t <no of threads>][--alg=<fjmerge,lkbucket>] \n");
-        }
+        printf("mysort [--name] [source.txt] [-o out.txt] [-t NUM THREADS] [--alg=<fj,bucket>] [--bar=<sense,pthread>] [--lock=<tas,ttas,ticket,mcs,pthread>] \n");
     }
-  for(; optind < argc; optind++){
-      handler_t.input_file = argv[optind]; //store the input file name passed as extra argument
-  }
+
+}
+
 
   if (verbose_flag)
   {
@@ -362,7 +411,6 @@ int array_to_file(struct handler handler_t, int buffer[])
   return 0;
 }
 
-
 /*
 Name : void *fj_merge(void *arg)
 Description : This function implements parellel merge sort to be executed in threads in execution using fork join
@@ -409,9 +457,9 @@ int get_bucket_range(vector<int>& arr, int size, int thread)
 {
     int max = 0, bucket = 0, divider = 0;
 
-	bucket = thread;
-  int temp[arr.size()];
-	std::copy(arr.begin(), arr.end(), temp);
+	   bucket = thread;
+     int temp[arr.size()];
+	   std::copy(arr.begin(), arr.end(), temp);
     //find max
     max = *max_element(temp,temp + size);
     divider = ceil(float(max + 1) / bucket);
@@ -429,19 +477,37 @@ Return: void
 void *bucketSort(void *arg)
 {
   struct bucket_task *b_task = (struct bucket_task *) arg;
+  void (*lock)() = funcs_lock[TEST_NUM];
+  void (*unlock)() = funcs_lock[TEST_NUM + 4];
+  if ((strcmp(func_names_lock[TEST_NUM], "pthread") == 0))
+    if (pthread_mutex_init(&bucket_lock, NULL) != 0)
+      printf("Mutex init failed\n");
+
 	int64_t i = 0, j = 0;
   if(b_task->t_id == 0)
-  {
-      clock_gettime(CLOCK_MONOTONIC,&start_time);
-  }
+    clock_gettime(CLOCK_MONOTONIC,&start_time);
 //  pthread_barrier_wait(&barrier);
 	printf("Executing thread %d\n",(b_task->t_id + 1));
 	for (i = 0; i < b_task->t_size; i++)
   {
 		j=floor( b_task->list[i] / b_task->t_divider );
-		pthread_mutex_lock(&bucket_lock); //Lock
-		Bucket[j].insert((b_task->list)[i]); //Critical Section
-		pthread_mutex_unlock(&bucket_lock); //Unlock
+		//pthread_mutex_lock(&bucket_lock); //Lock
+	//	Bucket[j].insert((b_task->list)[i]); //Critical Section
+	//	pthread_mutex_unlock(&bucket_lock); //Unlock
+  if (strcmp(handler_t.lock, "mcs") == 0)
+  {
+    Node *mynode = new Node;
+    my_mcs_lock.acquire(mynode);
+    printf("MCS --> %d\n", b_task->t_id);
+    Bucket[j].insert((b_task->list)[i]);
+    my_mcs_lock.release(mynode);
+  }
+else
+{
+  lock();
+  Bucket[j].insert((b_task->list)[i]);
+  unlock();
+}
 	}
 //	pthread_barrier_wait(&barrier);
 	return 0;
