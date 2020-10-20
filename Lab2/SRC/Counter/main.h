@@ -23,15 +23,11 @@
 struct handler
 {
   char name[20];  // Array to store the Authors name [Suraj Bajrang Thite].
-  char *input_file; //Pointer for input file name.
-  int f_size; // Size of input file.
   char *output_file; // Pointer to output file name.
-  int merge_sort; //Flag to determine whether the sort is merge sort.
-  int bucket; //Flag to determine whehter bucket sort is to be implemented.
   int thread_cnt; //Variable  to store the thread count.
-//  bool algo; //0  for Merge Sort and 1 for Buck Sort Implementation.
   char * lock; // String for storing type of lock.
   bool sense_barr; //Varibale for sense barrier functionality.
+  int iterations;
 };
 
 /* Structure to store the data set for each task */

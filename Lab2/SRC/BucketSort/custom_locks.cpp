@@ -7,41 +7,39 @@ atomic<bool> lock;
 atomic<int> next_num (0);
 atomic<int> now_serving (0);
 
-pthread_mutex_t mutex;
+//pthread_mutex_t mutex;
+extern pthread_mutex_t bucket_lock;
 pthread_barrier_t pthread_barrier;
+
 extern atomic<Node*> tail;
 extern struct handler handler_t;
 bar_t sense_bar_var;
 
 void TAS_lock()
 {
-	bool ex_val, changed_val;
-    do{
-        ex_val = false;
-        changed_val = true;
-    }while(!lock.compare_exchange_strong(ex_val,changed_val));
+//	printf("Executing TAS Lock");
+while(lock.exchange(true));
 }
 
 void TAS_unlock()
 {
-	lock.store(false);
+	lock.exchange(false);
 }
 
 void TTAS_lock()
 {
-    do {
-    	while (lock.load()) continue;
-    } while (lock.exchange(true)); // actual atomic locking
-    return;
+//	printf("Executing TTAS Lock");
+  while(lock.load() == true || lock.exchange(true));
 }
 
 void TTAS_unlock()
 {
-	lock.store(false);
+	lock.exchange(false);
 }
 
 void  Ticket_lock()
 {
+//	printf("Executing Ticket Lock");
 	int my_num = next_num.fetch_add(1);
 	while (now_serving.load() != my_num) { }
 }
@@ -53,21 +51,24 @@ void  Ticket_unlock()
 
 void  Pthread_lock()
 {
-	pthread_mutex_lock(&mutex);
+	printf("Executing pthread Lock");
+	pthread_mutex_lock(&bucket_lock);
 }
 
 void Pthread_unlock()
 {
-	pthread_mutex_unlock(&mutex);
+	pthread_mutex_unlock(&bucket_lock);
 }
 
 void Pthread_barrier()
 {
+//	printf("Executing pthread Barrier");
 	pthread_barrier_wait(&pthread_barrier);
 }
 
 void sense_bar()
 {
+		//printf("Executing Sense Barrier");
     thread_local bool my_sense;
     my_sense = (my_sense == 0) ? 1 : 0;
 
