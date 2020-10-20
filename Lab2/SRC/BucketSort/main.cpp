@@ -41,7 +41,8 @@ void *bucketSort(void *arg);
 void *fj_merge(void *arg);
 
 pthread_mutex_t bucket_lock = PTHREAD_MUTEX_INITIALIZER; //Static Lock Initialization
-pthread_barrier_t barrier;// Barrier for Synchronization
+pthread_barrier_t pthread_barrier_1;// Barrier for Synchronization
+pthread_barrier_t pthread_barrier_2;// Barrier for Synchronization
 
 vector <multiset <int32_t>> Bucket; //Global Bucket to store values
 struct timespec start_time, end_time; //Struct to store the timer values
@@ -164,7 +165,6 @@ if ((strcmp(argv[1], "--name")) != 0) {
 
 }
 
-
   if (verbose_flag)
   {
     printf("%s",handler_t.name);  // print and exit if -- name is passed
@@ -210,7 +210,7 @@ if ((strcmp(argv[1], "--name")) != 0) {
     if(handler_t.merge_sort)
       {
         int i = 0, low = 0 ,len =0;
-        pthread_barrier_init(&barrier, NULL, handler_t.thread_cnt); //Initialize the barrier
+        pthread_barrier_init(&pthread_barrier_2, NULL, handler_t.thread_cnt); //Initialize the barrier
         printf("\n Executing Merge Sort !! ");
 
         struct merge_task *merge_task_args;  // pointer to structure arguments
@@ -258,7 +258,7 @@ if ((strcmp(argv[1], "--name")) != 0) {
           merge(tsk->list, task_0->task_low, tsk->task_low - 1, tsk->task_high);
         }
         clock_gettime(CLOCK_MONOTONIC, &end_time); // store the end time
-        pthread_barrier_destroy(&barrier); //destroy the barrier since its not is use in any more
+        pthread_barrier_destroy(&pthread_barrier_2); //destroy the barrier since its not is use in any more
         printf("\nWriting Data to the file"); //Write the data to the file
         printf("\n************** The Sorted array is ***************** \n");
           for(int i=0;i<handler_t.f_size;i++)
@@ -277,7 +277,7 @@ if ((strcmp(argv[1], "--name")) != 0) {
       Bucket.resize(handler_t.thread_cnt); // resize the bucket
       int len = (array_size / handler_t.thread_cnt); // determine the number of elements to be passed to each thread
 
-      pthread_barrier_init(&barrier, NULL, handler_t.thread_cnt); //Initialize the barrier
+      pthread_barrier_init(&pthread_barrier_2, NULL, handler_t.thread_cnt); //Initialize the barrier
 
       for (i = 0; i < handler_t.thread_cnt; i++)
       {
@@ -322,7 +322,7 @@ if ((strcmp(argv[1], "--name")) != 0) {
       }
       }
       clock_gettime(CLOCK_MONOTONIC,&end_time); // determine the end time
-      pthread_barrier_destroy(&barrier);
+      pthread_barrier_destroy(&pthread_barrier_2);
       printf("\nWriting Data to the file"); //Write the data to file
       printf("\n************** The Sorted array is ***************** \n");
         for(int i=0;i<handler_t.f_size;i++)
@@ -423,13 +423,13 @@ void *fj_merge(void *arg)
   int low =0,high =0 , mid=0;
 	struct merge_task *merge_args = (struct merge_task *)arg;
 
-	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&pthread_barrier_2);
 
 	if(merge_args->task_no == 0){
 		clock_gettime(CLOCK_MONOTONIC,&start_time);
 	}
 
-	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&pthread_barrier_2);
 
 	printf("Executing thread %d\n", (merge_args->task_no + 1));
 
@@ -486,14 +486,11 @@ void *bucketSort(void *arg)
 	int64_t i = 0, j = 0;
   if(b_task->t_id == 0)
     clock_gettime(CLOCK_MONOTONIC,&start_time);
-//  pthread_barrier_wait(&barrier);
+  pthread_barrier_wait(&pthread_barrier_2);
 	printf("Executing thread %d\n",(b_task->t_id + 1));
 	for (i = 0; i < b_task->t_size; i++)
   {
 		j=floor( b_task->list[i] / b_task->t_divider );
-		//pthread_mutex_lock(&bucket_lock); //Lock
-	//	Bucket[j].insert((b_task->list)[i]); //Critical Section
-	//	pthread_mutex_unlock(&bucket_lock); //Unlock
   if (strcmp(handler_t.lock, "mcs") == 0)
   {
     Node *mynode = new Node;
@@ -509,6 +506,6 @@ else
   unlock();
 }
 	}
-//	pthread_barrier_wait(&barrier);
+	pthread_barrier_wait(&pthread_barrier_2);
 	return 0;
 }

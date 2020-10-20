@@ -9,7 +9,7 @@ atomic<int> now_serving (0);
 
 //pthread_mutex_t mutex;
 extern pthread_mutex_t bucket_lock;
-pthread_barrier_t pthread_barrier;
+extern pthread_barrier_t pthread_barrier_1;
 
 extern atomic<Node*> tail;
 extern struct handler handler_t;
@@ -63,12 +63,12 @@ void Pthread_unlock()
 void Pthread_barrier()
 {
 //	printf("Executing pthread Barrier");
-	pthread_barrier_wait(&pthread_barrier);
+	pthread_barrier_wait(&pthread_barrier_1);
 }
 
 void sense_bar()
 {
-		//printf("Executing Sense Barrier");
+		printf("Executing Sense Barrier");
     thread_local bool my_sense;
     my_sense = (my_sense == 0) ? 1 : 0;
 

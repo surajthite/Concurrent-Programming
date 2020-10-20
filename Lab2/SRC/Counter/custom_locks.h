@@ -7,7 +7,7 @@
 #include <vector>
 #include <sstream>
 #include<pthread.h>
-#include <main.h>
+#include <counter.h>
 using namespace std;
 
 typedef struct Barrier {

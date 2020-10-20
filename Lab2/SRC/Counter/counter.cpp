@@ -29,7 +29,7 @@ Description : This file contains the Application code for lab0 exercisedsfsd
 
 /* Custom Header Files*/
 
-#include "main.h"
+#include "counter.h"
 #include "sorts.h"
 #include "custom_locks.h"
 int verbose_flag;
