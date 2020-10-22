@@ -51,7 +51,7 @@ void  Ticket_unlock()
 
 void  Pthread_lock()
 {
-	printf("Executing pthread Lock");
+//	printf("Executing pthread Lock");
 	pthread_mutex_lock(&bucket_lock);
 }
 
@@ -68,7 +68,7 @@ void Pthread_barrier()
 
 void sense_bar()
 {
-		printf("Executing Sense Barrier");
+	//	printf("Executing Sense Barrier");
     thread_local bool my_sense;
     my_sense = (my_sense == 0) ? 1 : 0;
 

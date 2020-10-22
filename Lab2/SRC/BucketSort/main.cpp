@@ -199,11 +199,11 @@ if ((strcmp(argv[1], "--name")) != 0) {
   int list_array[list.size()];
   std::copy(list.begin(), list.end(), list_array); //Convert the vector to array
 
-  printf("\n************** The Input array is *****************\n");
-    for(int i=0;i<handler_t.f_size;i++)
-    {
-      printf("%d\n",list[i]); //Print the input read from the file
-    }
+  // printf("\n************** The Input array is *****************\n");
+  //   for(int i=0;i<handler_t.f_size;i++)
+  //   {
+  //     printf("%d\n",list[i]); //Print the input read from the file
+  //   }
 
     pthread_t threads[handler_t.thread_cnt];
 
@@ -240,14 +240,14 @@ if ((strcmp(argv[1], "--name")) != 0) {
             exit(1);
           } else
           {
-            printf("Thread %d started ....\n", (i+1));
+            //printf("Thread %d started ....\n", (i+1));
           }
         }
 
         for (i = 0; i < handler_t.thread_cnt; i++)
          {
            pthread_join(threads[i], NULL); // join the threads to the main thread
-           printf("Thread %d Joined ...\n", (i+1));
+           //printf("Thread %d Joined ...\n", (i+1));
         }
 
         struct merge_task *task_0 = &merge_args_list[0]; // select the thread 0 arguments
@@ -304,13 +304,13 @@ if ((strcmp(argv[1], "--name")) != 0) {
         }
         else
         {
-          printf("Creating thread %d\n", (i+1));
+          //printf("Creating thread %d\n", (i+1));
         }
       }
 
       for (i = 0; i < handler_t.thread_cnt; i++)
       {
-        printf("Joining thread %d\n", (i+1));
+      //  printf("Joining thread %d\n", (i+1));
         pthread_join(threads[i], NULL); // Join the threads
       }
       int vec_len = (int)Bucket.size();
@@ -323,12 +323,12 @@ if ((strcmp(argv[1], "--name")) != 0) {
       }
       clock_gettime(CLOCK_MONOTONIC,&end_time); // determine the end time
       pthread_barrier_destroy(&pthread_barrier_2);
-      printf("\nWriting Data to the file"); //Write the data to file
-      printf("\n************** The Sorted array is ***************** \n");
-        for(int i=0;i<handler_t.f_size;i++)
-        {
-          printf("%d\n",list[i]); //Print the sorted array !
-        }
+    //  printf("\nWriting Data to the file"); //Write the data to file
+      // printf("\n************** The Sorted array is ***************** \n");
+      //   for(int i=0;i<handler_t.f_size;i++)
+      //   {
+      //     printf("%d\n",list[i]); //Print the sorted array !
+      //   }
     array_to_file(handler_t, list); // Store the sorted data to a ouput file passed as argument
     }
 
@@ -487,7 +487,7 @@ void *bucketSort(void *arg)
   if(b_task->t_id == 0)
     clock_gettime(CLOCK_MONOTONIC,&start_time);
   pthread_barrier_wait(&pthread_barrier_2);
-	printf("Executing thread %d\n",(b_task->t_id + 1));
+//	printf("Executing thread %d\n",(b_task->t_id + 1));
 	for (i = 0; i < b_task->t_size; i++)
   {
 		j=floor( b_task->list[i] / b_task->t_divider );
@@ -495,7 +495,7 @@ void *bucketSort(void *arg)
   {
     Node *mynode = new Node;
     my_mcs_lock.acquire(mynode);
-    printf("MCS --> %d\n", b_task->t_id);
+  //  printf("MCS --> %d\n", b_task->t_id);
     Bucket[j].insert((b_task->list)[i]);
     my_mcs_lock.release(mynode);
   }
