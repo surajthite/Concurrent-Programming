@@ -68,10 +68,20 @@ const char* func_names_lock[FUNC_CNT/2] = {
     "ticket",
     "pthread"
 };
-
-struct handler handler_t = {"Suraj Bajrang Thite"};
-MCSLock my_mcs_lock;
+void (*bar_func)() = NULL;  //Function pointer to store barrier Functions
+const int NUM_BAR_FUNCS = 2;
+void (*funcs_barrier[NUM_BAR_FUNCS])()  = {
+    sense_bar,
+    Pthread_barrier
+};
+const char* func_names_barrier[NUM_BAR_FUNCS] = {
+    "sense",
+    "pthread"
+};
+struct handler handler_t = {"Suraj Bajrang Thite"}; //Object for handler for parsing command line arguments
+MCSLock my_mcs_lock; //Object for MCS Lock
 atomic<Node*> tail{NULL};
+int is_barrier_selected = 0; //Flag to deterime if barrier is to be implemented
 
 int main (int argc, char **argv)
 {
@@ -128,11 +138,27 @@ if ((strcmp(argv[1], "--name")) != 0) {
 
         case 'b':
         strcpy(bar, optarg);
+        is_barrier_selected = 1;
         if (strcmp(bar, "sense") == 0)
-            handler_t.sense_barr = 1;
+            {
+              handler_t.sense_barr = 1;
+              bar_func = funcs_barrier[0];
+            }
         else if (strcmp(bar, "pthread") == 0)
+          {
             handler_t.sense_barr = 0;
-        printf("\nFlag for Sense Barrier used is %d\n",handler_t.sense_barr);
+            bar_func = funcs_barrier[1];
+            pthread_barrier_init(&pthread_barrier_1, NULL, handler_t.thread_cnt); //Initialize the barrier
+          }
+        else
+          {
+            printf("\nEnter correct arguments for barriers i.e. <sense/pthread>");
+            exit(0);
+          }
+        if(  handler_t.sense_barr == 1 )
+        printf("\n Sense Barrier is used");
+        else
+        printf("\n Pthread Barrier is used\n");
         break;
 
         case 'o':
@@ -146,8 +172,6 @@ if ((strcmp(argv[1], "--name")) != 0) {
           if (strcmp(handler_t.lock, func_names_lock[i]) == 0)
           TEST_NUM = i;
         }
-          printf("The lock used is %s\n", handler_t.lock);
-          printf("The lock to be executed is %d\n",TEST_NUM);
         break;
 
         case 't':
@@ -322,7 +346,8 @@ if ((strcmp(argv[1], "--name")) != 0) {
       }
       }
       clock_gettime(CLOCK_MONOTONIC,&end_time); // determine the end time
-      pthread_barrier_destroy(&pthread_barrier_2);
+    if(handler_t.sense_barr ==0)
+      pthread_barrier_destroy(&pthread_barrier_1); // Destroy the barrier if pthread barrier was selected
     //  printf("\nWriting Data to the file"); //Write the data to file
       // printf("\n************** The Sorted array is ***************** \n");
       //   for(int i=0;i<handler_t.f_size;i++)
@@ -486,8 +511,9 @@ void *bucketSort(void *arg)
 	int64_t i = 0, j = 0;
   if(b_task->t_id == 0)
     clock_gettime(CLOCK_MONOTONIC,&start_time);
-  pthread_barrier_wait(&pthread_barrier_2);
-//	printf("Executing thread %d\n",(b_task->t_id + 1));
+
+if(is_barrier_selected)
+  bar_func();
 	for (i = 0; i < b_task->t_size; i++)
   {
 		j=floor( b_task->list[i] / b_task->t_divider );
@@ -495,7 +521,6 @@ void *bucketSort(void *arg)
   {
     Node *mynode = new Node;
     my_mcs_lock.acquire(mynode);
-  //  printf("MCS --> %d\n", b_task->t_id);
     Bucket[j].insert((b_task->list)[i]);
     my_mcs_lock.release(mynode);
   }
@@ -506,6 +531,7 @@ else
   unlock();
 }
 	}
-	pthread_barrier_wait(&pthread_barrier_2);
+  if(is_barrier_selected)
+    bar_func();
 	return 0;
 }

@@ -9,7 +9,7 @@
 #include<pthread.h>
 #include <main.h>
 using namespace std;
-
+// Structure to hold data for barrier
 typedef struct Barrier {
     atomic<int> cnt;
     atomic<int> sense;
@@ -25,7 +25,7 @@ public:
 
 extern atomic<Node*> tail;
 
-
+//Class to implement MCS Lock
 class MCSLock
 {
 public:
@@ -60,22 +60,25 @@ public:
 		}
 	}
 };
-
-
-
+// Function Definitions for Locking and Unlocking Functionality for Custom Locks
 void TAS_lock();
+
 void TAS_unlock();
 
 void TTAS_lock();
+
 void TTAS_unlock();
 
 void Ticket_lock();
+
 void Ticket_unlock();
 
 void Pthread_lock();
+
 void Pthread_unlock();
 
 void Pthread_barrier();
+
 void sense_bar() ;
 
 #endif

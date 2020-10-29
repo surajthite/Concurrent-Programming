@@ -22,7 +22,7 @@ SOFTWARE.
 ****************************************************************************************************/
 
 /*
-File_Name : main.cpp
+File_Name : counter.cpp
 Author: Suraj Thite
 Description : This file contains the Application code for lab0 exercisedsfsd
 */
@@ -49,14 +49,14 @@ int TEST_NUM=0;
 const int FUNC_CNT = 8;
 const int NUM_BAR_FUNCS = 2;
 
-void (*bar_func)() = NULL;
-struct handler handler_t = {"Suraj Bajrang Thite"};
-MCSLock my_mcs_lock;
+void (*bar_func)() = NULL; //Function pointer for barriers
+struct handler handler_t = {"Suraj Bajrang Thite"}; // Handler to  handle command line arguments
+MCSLock my_mcs_lock; //Object for MCS Lock
 atomic<Node*> tail{NULL};
 
-int is_barrier_selected = 0;
-int is_lock_selected = 0;
-int mcs_lock_selected = 0;
+int is_barrier_selected = 0; //Flag for barrier
+int is_lock_selected = 0; //Flag for Lock
+int mcs_lock_selected = 0; //Flag for MCS Lock
 
 void (*funcs_lock[FUNC_CNT])()  =
 {
@@ -176,12 +176,12 @@ if ((strcmp(argv[1], "--name")) != 0)
 		handler_t.thread_cnt = 1; //Set thread count to one if invalid thread count is passed
 	}
 
-  if(is_lock_selected == is_barrier_selected)
+  if(is_lock_selected == is_barrier_selected) //CHeck whether lock and barrier both are selected
   {
       printf("Lock and barrier selected!\n");
       exit(0);
   }
-  else if(is_lock_selected)
+  else if(is_lock_selected) //Swet the function pointer to corresponding lock
   {
     for (int i = 0; (i < (FUNC_CNT/2)); i++)
   {
@@ -190,7 +190,7 @@ if ((strcmp(argv[1], "--name")) != 0)
   }
     printf("The lock used is %s\n", handler_t.lock);
     printf("The lock to be executed is %d\n",TEST_NUM);
-}else if(is_barrier_selected)
+}else if(is_barrier_selected)   //Set the barrier function
 {
   if (strcmp(bar, "sense") == 0)
   {
@@ -211,29 +211,29 @@ if ((strcmp(argv[1], "--name")) != 0)
 
     pthread_t threads[handler_t.thread_cnt];
     int thread_id[handler_t.thread_cnt];
-    pthread_barrier_init(&pthread_barrier_2, NULL, handler_t.thread_cnt);
+    pthread_barrier_init(&pthread_barrier_2, NULL, handler_t.thread_cnt); //INit the barrier
     for (int i = 0; i < handler_t.thread_cnt; i++)
         {
             thread_id[i] = i;
-            pthread_create(&threads[i], NULL, thread_main, (void *)&thread_id[i]);
+            pthread_create(&threads[i], NULL, thread_main, (void *)&thread_id[i]);  //Create the thread
         }
     for (int i = 0; i < handler_t.thread_cnt; i++)
       {
-            pthread_join(threads[i], NULL);
+            pthread_join(threads[i], NULL); //Joing the threads
       }
-    out_fileptr = fopen(handler_t.output_file, "w");
+    out_fileptr = fopen(handler_t.output_file, "w"); //Open the File
 if( !out_fileptr ) {
     printf("Output file open failed\n");
     return -1;
 }
 fseek(out_fileptr, 0, SEEK_SET);
-fprintf(out_fileptr, "%d\n", cntr);
+fprintf(out_fileptr, "%d\n", cntr); //Write the counter to the file
 
 unsigned long long elapsed_ns;
 elapsed_ns = (end_time.tv_sec-start_time.tv_sec)*1000000000 + (end_time.tv_nsec-start_time.tv_nsec);
-printf("Elapsed (ns): %llu\n",elapsed_ns);
+printf("Elapsed (ns): %llu\n",elapsed_ns); //Print the elapsed time
 
- pthread_barrier_destroy(&pthread_barrier_2);
+ pthread_barrier_destroy(&pthread_barrier_2); //Destroy the barrier
 //
  if(handler_t.sense_barr == 0 && is_barrier_selected) {
   printf("Destroying Barrier!!");
