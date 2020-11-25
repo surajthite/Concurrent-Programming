@@ -38,52 +38,49 @@ Description : Function to merge two lists passed as arguments
 INput: Array to be sorted , start , mid and end of the list
 Return: void
 */
-void merge (int arr[], int start, int mid, int end)
+void merge(int array[], int low, int mid, int high)
 {
+    // printf("Inside merge\n");
+    int i, j, k;
+    int r1 = mid - low + 1;
+    int r2 =  high - mid;
 
-    int len_left = mid - start + 1;
-    int len_right = end - mid;
-    int temp_left[len_left];
-    int temp_right[len_right];
-    int i, j, k = 0;
-    for (i = 0; i < len_left; i++)
-    {
-        temp_left[i] = arr[start + i]; //Copy the data into left array
-    }
+    int lh[r1], uh[r2];
 
-    for (j = 0; j < len_right; j++)
-    {
-        temp_right[j] = arr[mid + 1 + j]; //Copy the data into right array
-    }
+    for (i = 0; i < r1; i++)
+        lh[i] = array[low + i];
+    for (j = 0; j < r2; j++)
+        uh[j] = array[mid + 1+ j];
 
     i = 0;
     j = 0;
-    k = start;
+    k = low;
 
-    while ((i < len_left) && (j < len_right))
+    while (i < r1 && j < r2)
     {
-        if (temp_left[i] <= temp_right[j]) //if left data < right data store temp[left] in array else store temp[right]
+        if (lh[i] <= uh[j])
         {
-            arr[k] = temp_left[i];
+            array[k] = lh[i];
             i++;
-        } else {
-            arr[k] = temp_right[j];
+        }
+        else
+        {
+            array[k] = uh[j];
             j++;
         }
-
         k++;
     }
 
-    while (i < len_left) //Copy the remaining data from temp_left
+    while (i < r1)
     {
-        arr[k] = temp_left[i];
+        array[k] = lh[i];
         i++;
         k++;
     }
 
-    while (i < len_right) //Copy the remaining data from temp_right
+    while (j < r2)
     {
-        arr[k] = temp_right[j];
+        array[k] = uh[j];
         j++;
         k++;
     }
@@ -104,61 +101,5 @@ void mergesort(int arr[], int start, int end)
         mergesort(arr, start, mid); //Merge sort the bottom half
         mergesort(arr, (mid + 1), end); //Merge sort the upper healf
         merge(arr, start, mid, end); //merge both the orted arrays
-    }
-}
-
-
-
-/*
-Name : swap
-Description : Function to swap two numbers passed as arguments
-INput: Pointer to two numbers
-Return: void
-*/
-void swap(int* x, int* y)
-{
-    int z = *x;
-    *x = *y;
-    *y = z;
-}
-
-/*
-Name : partition
-Description : Function to partition the given set of data passed as arguments
-INput: Array, high and low values
-Return: index to an array
-*/
-
-int partition (int arr[], int low, int high)
-{
-    int pivot = arr[high]; //Detemine the pivoot
-    int i = (low - 1);
-
-    for (int j = low; j <= high- 1; j++)
-    {
-        if (arr[j] < pivot)
-        {
-            i++;
-            swap(&arr[i], &arr[j]);
-        }
-    }
-    swap(&arr[i + 1], &arr[high]);
-    return (i + 1);
-}
-
-/*
-Name : quickSort
-Description : Function to do a recursive quick sort
-INput: Array, High and low values
-Return: void
-*/
-
-void quickSort(int arr[], int head, int tail)
-{
-    if (head < tail)
-    {
-        int p = partition(arr, head, tail); // Partition the array with head and tail as arguments
-        quickSort(arr, head, p - 1);  //Quick Sort the first partition
-        quickSort(arr, p + 1, tail); //Quick sort the second parition
     }
 }

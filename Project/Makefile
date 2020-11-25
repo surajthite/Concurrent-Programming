@@ -1,0 +1,13 @@
+all: file tree test
+
+file: generate_random_num.c
+	g++ -Wall -Werror -g -I. -o file generate_random_num.c -pthread
+
+tree: main.c arg_parser.c mutex_lock_bst.c rw_lock_bst.c
+	g++ -I. -o tree main.c arg_parser.c mutex_lock_bst.c rw_lock_bst.c -pthread
+
+test: unit_test.c arg_parser.c mutex_lock_bst.c
+	g++ -I. -o test unit_test.c arg_parser.c mutex_lock_bst.c -pthread
+
+clean:
+	rm -f file tree test *.o

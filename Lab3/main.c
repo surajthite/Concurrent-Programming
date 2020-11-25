@@ -34,12 +34,24 @@ Description : This file contains the Application code for lab0 exercise
 #include "sorts.h"
 #include <omp.h>
 int verbose_flag;
+
+struct merge_sort_task {
+    int task_no;
+    int task_low;
+    int task_high;
+};
+
+void threadedMerge(struct merge_sort_task *arg);
+#define MAX_NUM_THREADS 10
+static int num_threads = 1; // Total number of threads, default to 1 for main thread
+static int count = 0; // Variable to store number of elements
+int *list = NULL; // Array to store sorted elements
 int main (int argc, char **argv)
 {
 int c = 0;
 char *buff = NULL;
 size_t temp =0;
-int count =0;
+//int count =0;
 FILE *fptr = NULL;
 
 struct handler handler_t = {"Suraj Bajrang Thite"};
@@ -115,8 +127,9 @@ if( handler_t.output_file == NULL )
     count ++; //Detect the num of elements in the list
   }
   handler_t.f_size = count;
-  int array_size = ((handler_t.f_size)); //Store the number of elements in varibale in the handler structure
-  int list[array_size]; //Array to store the data from input file
+  //int array_size = ((handler_t.f_size)); //Store the number of elements in varibale in the handler structure
+  list = (int *)malloc( handler_t.f_size * sizeof(int));
+  //int list[array_size]; //Array to store the data from input file
   if(file_to_array(handler_t,list)!=0)  //Store data from file to array
   {
     printf("\nCannot write to file"); //Print in case of bad FD
@@ -128,23 +141,76 @@ if( handler_t.output_file == NULL )
       printf("%d\n",list[i]); //Print the input read from the file
     }
 
-    int cnt = (array_size - (array_size / 2) + 1);
-    #pragma omp parallel sections
-      {
-          #pragma omp section
+//    int cnt = (array_size - (array_size / 2) + 1);
+    struct merge_sort_task *task;
+
+    int len = 0;
+    int low = 0;
+
+    struct merge_sort_task tasklist[MAX_NUM_THREADS];
+
+   omp_set_num_threads(MAX_NUM_THREADS);
+
+    #pragma omp parallel
+    {
+    //  printf("Executing Parallel Section1 ..\n");
+        num_threads = omp_get_num_threads();
+
+        #pragma omp master
+        {
+            if( num_threads != 0 ) {
+              // printf("num_elements : %d",num_elements);
+              //printf("num_threads : %d",num_threads);
+                len = handler_t.f_size / num_threads;
+                // printf("Length : %d",len);
+            }
+        }
+
+        #pragma omp barrier
+
+  //printf("Executing Parallel Section2 ..\n");
+        /* splitting input array to smaller arrays */
+        #pragma omp master
+        {
+          for (int i = 0; i < num_threads; i++)
           {
-  			mergesort(list, 0, (array_size/2));
+              task = &tasklist[i];
+              task->task_no = i;
+              task->task_low = low;
+              task->task_high = low + len - 1;
+              if (i == (handler_t.f_size - 1) || i == num_threads - 1)
+                  task->task_high = handler_t.f_size - 1;
+              low += len;
+            //  printf("Task number = %d\tLow = %d\tHigh = %d\n", task->task_no, task->task_low, task->task_high);
+
           }
+        }
 
-          #pragma omp section
+        #pragma omp barrier
+        //printf("Executing Parallel Section3 ..\n");
+
+        #pragma omp for
+        for (int i = 0; i < num_threads; i++)
+        {
+            //printf("Num threads = %d\n", num_threads);
+            task = &tasklist[i];
+            threadedMerge(task);
+        }
+
+        #pragma omp barrier
+
+
+        #pragma omp master
+        {
+          for (int i = 1; i < num_threads; i++)
           {
-         		mergesort(list, cnt, (array_size - 1));
-  		 }
+            struct merge_sort_task *task1 = &tasklist[i];
+            //printf("Task number = %d\tLow = %d\tHigh = %d\n", task1->task_no, task1->task_low, task1->task_high);
+            merge(list, 0, task1->task_low - 1, task1->task_high);
+          }
+        }
 
-      }
-
-  	merge (list, 0, (cnt - 1), (array_size - 1));
-
+    }
     printf("\nWriting Data to the file");
     printf("\n************** The Sorted array is ***************** \n");
       for(int i=0;i<handler_t.f_size;i++)
@@ -152,6 +218,7 @@ if( handler_t.output_file == NULL )
         printf("%d\n",list[i]); //Print the sorted array !
       }
     array_to_file(handler_t, list); // Store the sorted data to a ouput file passed as argument
+    free(list);
   exit (0);
 }
 
@@ -200,4 +267,20 @@ int array_to_file(struct handler handler_t, int buffer[])
   }
   fclose(file_pointer); //Close the FD
   return 0;
+}
+
+
+void threadedMerge(struct merge_sort_task *arg)
+{
+  struct merge_sort_task *task = arg;
+  int low =0,high =0;
+  low = task->task_low;
+  high = task->task_high;
+  //int mid = low + (high - low) / 2;
+// printf("Task number = %d\n", task->task_no);
+  if (low < high)
+  {
+      mergesort(list, low, high);
+    }
+  //  return 0;
 }
