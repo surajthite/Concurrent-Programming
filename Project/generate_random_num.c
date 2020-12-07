@@ -3,16 +3,16 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
-#include <iostream> 
-#include <algorithm> 
-  
-using namespace std; 
+#include <iostream>
+#include <algorithm>
+
+using namespace std;
 
 int main(int argc, char **argv)
 {
 	if (argc != 8) {
 		printf("Invalid Argument\n");
-		printf("Usage: ./file [insert filename] [Number of elements to insert] [Max limit] [search filename] [Number of elements to search] [range filename] [Number of range querry]\n");
+		printf("Usage: ./radom [insert file_name] [Number of elements to insert] [Max limit] [search file_name] [Number of elements to search] [range file_name] [Number of range querry]\n");
 		exit(0);
 	}
 
@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 	int i = 0;
 
 	FILE *ifp, *sfp, *rfp;
-	
+
 	srand(time(NULL));
 
 	int temp[icount];
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
 	fclose(ifp);
 
-	
+
 	sfp = fopen(sfilename, "w+");
 
 	if (sfp == NULL) {

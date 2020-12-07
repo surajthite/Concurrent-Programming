@@ -1,9 +1,44 @@
+/***************************************************************************************************
+MIT License
+
+Copyright (c) 2021 Suraj Thite
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+****************************************************************************************************/
+
+/**
+ * @\file	mutex_lock_bst.c
+ * @\author	Suraj Thite
+ * @\brief	This file contains the application code for parallel tree
+ */
+
+
 #include "mutex_lock_bst.h"
 
-extern bst_node *g_root;
+extern bst_node *global_root;
 extern pthread_mutex_t bst_lock;
 extern vector <range> querry[2];
 
+/**
+ * @\Function : void BSTtoArray(bst_node *root, int A[])
+ * @\brief : This function returns pointer to newnode with all the data memebers initialized.
+ * @\input : key and value to be inserted.
+ * @\return : pointer to initialized node.
+ */
 
 bst_node *get_new_node(int key, int val)
 {
@@ -17,32 +52,34 @@ bst_node *get_new_node(int key, int val)
 }
 
 
-// void update_val(bst_node *node, int val)
-// {
-// 	node->value = val;
-// }
+/**
+ * @\Function : void put_node(bst_node *root, int key, int value, int thread_num)
+ * @\brief : This function insters the value and key to the thread safe BST
+ * @\input : pointer to root of BST, key , Value to be inserted , thread_num
+ * @\return : void
+ */
 
 void put_node(bst_node *root, int key, int value, int thread_num)
 {
-	if (root == NULL)
+	if (!root)
 	{
 		pthread_mutex_lock(&bst_lock);
-		if (g_root == NULL)
+		if (!global_root)
 		{
-			g_root = get_new_node(key, value);
-			printf("New Node added to the tree with key(%d) and value(%d) \n", g_root->key, g_root->value);
+			global_root = get_new_node(key, value);
+			printf("New Node added to the tree with key(%d) and value(%d) \n", global_root->key, global_root->value);
 			pthread_mutex_unlock(&bst_lock);
 			return;
 		}
 
-		pthread_mutex_lock(&g_root->lock);
-		root = g_root;
+		pthread_mutex_lock(&global_root->lock);
+		root = global_root;
 		pthread_mutex_unlock(&bst_lock);
 	}
 
 	if (key < root->key)
 	{
-		if (root->left == NULL)
+		if (!root->left)
 		{
 			root->left = get_new_node(key, value);
 			pthread_mutex_unlock(&root->lock);
@@ -56,7 +93,7 @@ void put_node(bst_node *root, int key, int value, int thread_num)
 	}
 	else if (key > root->key)
     {
-        if (root->right == NULL)
+        if (!root->right)
         {
             root->right = get_new_node(key, value);
             pthread_mutex_unlock(&root->lock);
@@ -68,28 +105,34 @@ void put_node(bst_node *root, int key, int value, int thread_num)
             put_node(root->right, key, value, thread_num);
         }
     }
-		else {
+		else
+	{
 		if (root->key == key)
 			root->value = value;
-			//update_val(root, value);
 		pthread_mutex_unlock(&root->lock);
 	}
 }
 
+/**
+ * @\Function : void BSTtoArray(bst_node *root, int A[])
+ * @\brief : This function gets the data from the node depending upon the key value passed
+ * @\input : pointer to root of BST , key value
+ * @\return : void
+ */
+
 bst_node *get_node(bst_node *root, int key)
 {
-	if (root == NULL)
+	if (!root)
 	{
 		pthread_mutex_lock(&bst_lock);
-		if (g_root == NULL)
+		if (!global_root)
 		{
-			//printf("Searched failed for node with key %d\n", key);
 			pthread_mutex_unlock(&bst_lock);
 			return NULL;
 		}
 
-		pthread_mutex_lock(&g_root->lock);
-		root = g_root;
+		pthread_mutex_lock(&global_root->lock);
+		root = global_root;
 		pthread_mutex_unlock(&bst_lock);
 	}
 
@@ -100,12 +143,13 @@ bst_node *get_node(bst_node *root, int key)
 	}
 	else if (key < root->key)
 	{
-		if (root->left == NULL)
+		if (!root->left)
 		{
-			//printf("Searched failed for node with key %d\n", key);
 			pthread_mutex_unlock(&root->lock);
 			return NULL;
-		} else {
+		}
+		else
+		{
 			pthread_mutex_lock(&root->left->lock);
 			pthread_mutex_unlock(&root->lock);
 			get_node(root->left, key);
@@ -113,67 +157,82 @@ bst_node *get_node(bst_node *root, int key)
 	}
 	else if (key > root->key)
     {
-        if (root->right == NULL)
+        if (!root->right)
         {
-            //printf("Searched failed for node with key %d\n", key);
             pthread_mutex_unlock(&root->lock);
             return NULL;
-        } else {
+        }
+				else
+				{
             pthread_mutex_lock(&root->right->lock);
             pthread_mutex_unlock(&root->lock);
             get_node(root->right, key);
         }
-    } else {
-		pthread_mutex_unlock(&root->lock);
-		return NULL;
-	}
-
-	//return NULL;
+    }
+		else
+		{
+			pthread_mutex_unlock(&root->lock);
+			return NULL;
+		}
 }
 
+/**
+ * @\Function : void BSTtoArray(bst_node *root, int A[])
+ * @\brief : This function does arange querry in between start_key and end_key
+ * @\input : pointer to root, start key value , end key value , thread id
+ * @\return : void
+ */
 void range_querry(bst_node *root, int start_key, int end_key, int tid)
 {
-	if (root == NULL) {
+	if (!root)
+	{
 		return;
 	}
 
 	bst_node *start_node = get_node(NULL, start_key);
 	bst_node *end_node = get_node(NULL, end_key);
 
-	if (start_node == NULL) {
+	if (!start_node)
+	{
 		printf("Invalid Query. Node with key %d is not present in the tree\n", start_key);
-	} else if (end_node == NULL) {
+	}
+	else if (!end_node)
+	{
 		printf("Invalid Query. Node with key %d is not present in the tree\n", end_key);
-	} else {
+	}
+	else
+	{
 		pthread_mutex_lock(&bst_lock);
 		pthread_mutex_lock(&root->lock);
 		pthread_mutex_unlock(&bst_lock);
-		//printf("Range query result for %d to %d\n", start_key, end_key);
 		get_nodes_inrange(root, start_key, end_key, tid);
 	}
 }
 
-//fetch all the nodes in the given range
+/**
+ * @\Function : void BSTtoArray(bst_node *root, int A[])
+ * @\brief : This function returns nodes in range between start_key and end_key
+ * @\input :  pointer to root, start key value , end key value , thread id
+ * @\return : void
+ */
 void get_nodes_inrange(bst_node *root, int start_key, int end_key, int tid)
 {
-	if (root == NULL)
+	if (!root)
 	{
 		pthread_mutex_lock(&bst_lock);
-		if (g_root == NULL)
+		if (!global_root)
 		{
-			//printf("Searched failed for node with key %d\n", key);
 			pthread_mutex_unlock(&bst_lock);
 			return;
 		}
-
-		pthread_mutex_lock(&g_root->lock);
-		root = g_root;
+		pthread_mutex_lock(&global_root->lock);
+		root = global_root;
 		pthread_mutex_unlock(&bst_lock);
 	}
 
 	if (start_key < root->key)
 	{
-		if (root->left != NULL)
+		if (root->left)
 		{
 			pthread_mutex_lock(&root->left->lock);
 			pthread_mutex_unlock(&root->lock);
@@ -185,13 +244,12 @@ void get_nodes_inrange(bst_node *root, int start_key, int end_key, int tid)
 
 	if ((start_key <= root->key) && (end_key >= root->key))
 	{
-		//printf("-->%d  %d to %d\n",tid, root->key, root->value);
 		querry[tid].push_back({start_key, end_key, root});
 	}
 
 	if (end_key > root->key)
     {
-        if (root->right != NULL)
+        if (root->right)
         {
         	pthread_mutex_lock(&root->right->lock);
         	pthread_mutex_unlock(&root->lock);
@@ -199,26 +257,37 @@ void get_nodes_inrange(bst_node *root, int start_key, int end_key, int tid)
         	pthread_mutex_lock(&root->lock);
         }
     }
-
     pthread_mutex_unlock(&root->lock);
-
 }
 
-void print_tree(bst_node *root)
+/**
+ * @\Function : void BSTtoArray(bst_node *root, int A[])
+ * @\brief : This functions print the BST in inorder order
+ * @\input : pointer to the root node of the BST
+ * @\return : void
+ */
+void print_tree_inorder(bst_node *root)
 {
-	if (root == NULL)
+	if (!root)
 		return;
 
-	print_tree(root->left);
+	print_tree_inorder(root->left);
 	printf("%d %d\n", root->key, root->value);
-	print_tree(root->right);
+	print_tree_inorder(root->right);
 
 }
 
 
+/**
+ * @\Function : void free_tree(bst_noderw *root)
+ * @\brief : This function frees the tree allocated in the heap section
+ * @\input : Pointer to the root node of the BST
+ * @\return : void
+ */
 void free_tree(bst_node *root)
 {
-	if (root != NULL) {
+	if (root)
+	 {
         free_tree(root->right);
         free_tree(root->left);
         pthread_mutex_destroy(&root->lock);

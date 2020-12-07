@@ -99,7 +99,7 @@ if ((argc < 2) || (argc > 9) || (argc < 9 && argc >2)) // Check for number of ar
 }
 if ((strcmp(argv[1], "--name")) != 0) {
   handler_t.input_file = argv[1]; //store the input file name passed as extra argument
-   printf("The input filename is %s\n", handler_t.input_file);
+   printf("The input file_name is %s\n", handler_t.input_file);
 }
   while (1)
     {

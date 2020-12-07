@@ -1,7 +1,7 @@
-all: file tree test
+all: gen_random tree test
 
-file: generate_random_num.c
-	g++ -Wall -Werror -g -I. -o file generate_random_num.c -pthread
+gen_random: gen_random.c
+	g++ -Wall -Werror -g -I. -o gen_random gen_random.c -pthread
 
 tree: main.c arg_parser.c mutex_lock_bst.c rw_lock_bst.c
 	g++ -I. -o tree main.c arg_parser.c mutex_lock_bst.c rw_lock_bst.c -pthread
