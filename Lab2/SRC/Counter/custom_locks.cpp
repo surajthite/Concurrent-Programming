@@ -22,6 +22,7 @@ Return: void
 
 void TAS_lock()
 {
+
 	while(lock.exchange(true));
 }
 
@@ -31,7 +32,6 @@ Description : Implements the un;ocking functionality for TAS Unlock
 Input: void
 Return: void
 */
-
 void TAS_unlock()
 {
 	lock.exchange(false);
@@ -43,9 +43,10 @@ Description : Implements the locking functionality for TAS Lock
 Input: void
 Return: void
 */
+
 void TTAS_lock()
 {
-  while(lock.load() == true || lock.exchange(true));
+	while(lock.load() == true || lock.exchange(true));
 }
 
 /*
@@ -67,6 +68,7 @@ Return:void
 */
 void  Ticket_lock()
 {
+//	printf("Executing Ticket Lock");
 	int my_num = next_num.fetch_add(1);
 	while (now_serving.load() != my_num) { }
 }
@@ -81,6 +83,7 @@ void  Ticket_unlock()
 {
 	now_serving.fetch_add(1);
 }
+
 /*
 Name : void  Pthread_lock()
 Description : Implements the locking functionality for TAS Lock

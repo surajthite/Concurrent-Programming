@@ -170,7 +170,7 @@ if ((argc < 2) || (argc > 7) || (argc < 7 && argc >2)) // Check for number of ar
 
         len = (array_size / handler_t.thread_cnt); // calculate the length of the elements to be passed into each thread
 
-        for (i = 0; i < handler_t.thread_cnt; i++, low += len)
+        for (i = 0; i < handler_t.thread_cnt; i++, g)
         {
           merge_task_args = &merge_args_list[i]; // point to arguments of ith thread
 
